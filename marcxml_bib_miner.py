@@ -120,7 +120,7 @@ def main():
     parser.add_argument("output_filename", action="store")
     parser.add_argument("features",
                         action="store",
-                        help="tag[$/.:-_]parameter[,;+], e.g. LDR/7;008;856$u"
+                        help="tag[$/.:-_]parameter[,;+], e.g. 'LDR/7;008;856$u'"
                         )
     parser.add_argument("-p",
                         "--count_ploc",

@@ -20,6 +20,8 @@ Optional arguments enables operations which were needed in my projects, such as 
 
 The data can then serve as input to any data analysis tool.
 
-Example of a command: `python marcxml_bib_miner.py sample.xml output.csv LDR/6,008/23,337$b,338$b,776,856$u`
+Example of a command: `python marcxml_bib_miner.py sample.xml output.csv "LDR/6,008/23,337$b,338$b,776,856$u"`
+
+Depending on the terminal, different field-subfield separators should be used such as `_` or `-` (e.g., in PowerShell `$` is reserved for variables and thus won't work).
 
 See built-in help (-h) for all information.
