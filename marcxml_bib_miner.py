@@ -34,7 +34,7 @@ def update_progress(n_records: int):
 def clean_feature(s: str):
     s = s.lower()
     s = re.sub("ldr", "leader", s)
-    s = re.sub(r"[$/.:-_]0?", "_", s)
+    s = re.sub(r"[$/.:\-_]0?", "_", s)
 
     return s
 
@@ -138,9 +138,9 @@ def main():
                         help="Count local extensions ($9 LOCAL)"
                         )
     parser.add_argument("-s",
-                        "--split_by_holding",
+                        "--split_by_holdings",
                         action="store_true",
-                        help="Write 1 row per holding (requires embedded HOL)"
+                        help="Write 1 row per holdings (requires embedded HOL)"
                         )
     args = parser.parse_args()
     filename_in = args.input_filename
@@ -163,6 +163,10 @@ def main():
 
     for record_match in re.finditer(get_record_regexp(), f_in.read()):
         rec_n += 1
+
+        if rec_n == 1 or rec_n % 100 == 0:
+            update_progress(rec_n)
+
         record = record_match.group(0)
         dict_out = {}
 
@@ -170,9 +174,6 @@ def main():
         m = re.search(get_bib_cnum_regexp(), record)
         bib_cnum = m.group(0) if m is not None else ""
         dict_out["bib_cnum"] = bib_cnum
-
-        if rec_n == 1 or rec_n % 100 == 0:
-            update_progress(rec_n)
 
         # Extract features
         for feature in features:
@@ -203,7 +204,7 @@ def main():
             dict_out["n_local_ext"] = len(re.findall(regexp, record))
 
         # Write to file output
-        if args.split_by_holding:
+        if args.split_by_holdings:
             for hol_cnum in get_all_hol_cnum(record):
                 dict_out["hol_cnum"] = hol_cnum
                 writer.writerow(dict_out)
