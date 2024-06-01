@@ -34,7 +34,7 @@ def update_progress(n_records: int):
 def clean_feature(s: str):
     s = s.lower()
     s = re.sub("ldr", "leader", s)
-    s = re.sub(r"[$/.:\-_]0?", "_", s)
+    s = re.sub(r"[_\-/$.:]", "_", s)
 
     return s
 
@@ -75,7 +75,7 @@ def get_fields_with_tag_regexp(f_tag: str):
 
 def get_field_contents_regexp(f_tag: str, f_param: str):
     if f_tag == "leader" or f_tag.startswith("00"):
-        if f_param in ["all", "full", ""]:
+        if f_param == "":
             pattern = """{tag}"?>
                          (.*)  # group 1 (data to be mined)
                          """.format(tag=f_tag)
@@ -86,7 +86,7 @@ def get_field_contents_regexp(f_tag: str, f_param: str):
                          """.format(tag=f_tag, pos=int(f_param))
         flags = re.VERBOSE
     else:  # data fields
-        if f_param in ["all", "full", ""]:
+        if f_param == "":
             pattern = """<subfield[^>]+>
                          (.*?)
                          <\/subfield>"""
@@ -102,6 +102,10 @@ def get_field_contents_regexp(f_tag: str, f_param: str):
     return re.compile(pattern, flags)
 
 
+def get_indicators(field):
+    return re.findall("ind[1-2]=\"(.)\"", field)
+
+
 def get_all_hol_cnum(record: str):
     pattern = """(?<=tag="852")
                  .*?code="8">
@@ -115,37 +119,50 @@ def get_all_hol_cnum(record: str):
 @timer
 def main():
     # Argument handling
-    parser = argparse.ArgumentParser(description="Extract data from BIB")
+    parser = argparse.ArgumentParser(description="Extract data from MARCXML bibliographic records")
     parser.add_argument("input_filename", action="store")
     parser.add_argument("output_filename", action="store")
     parser.add_argument("features",
                         action="store",
-                        help="tag[$/.:-_]parameter[,;+], e.g. 'LDR/7;008;856$u'"
+                        help="""Specify tags of the fields to be extracted.
+                                Use ind[1-2]= to add conditions based on indicators.
+                                Optionally, specify a parameter, i.e., 
+                                the position (for LDR/control fields) 
+                                or the subfield code (for data fields).
+                                Feature separators: [,;]
+                                Parameter separators: [_-/$.:]
+                                Example: "LDR/6,264ind1= ind2=4,300,338$b,856ind2=1$u"
+                                """
+                        )
+    parser.add_argument("-i",
+                        "--show_ind",
+                        action="store_true",
+                        help="extract indicators for all features"
                         )
     parser.add_argument("-p",
                         "--count_ploc",
                         action="store_true",
-                        help="Count physical locations (field 852)"
+                        help="count physical locations (field 852)"
                         )
     parser.add_argument("-e",
                         "--count_eloc",
                         action="store_true",
-                        help="Count electronic locations (field 856)"
+                        help="count electronic locations (field 856)"
                         )
     parser.add_argument("-l",
                         "--count_local_ext",
                         action="store_true",
-                        help="Count local extensions ($9 LOCAL)"
+                        help="count local extensions ($9 LOCAL)"
                         )
     parser.add_argument("-s",
                         "--split_by_holdings",
                         action="store_true",
-                        help="Write 1 row per holdings (requires embedded HOL)"
+                        help="write 1 row per holdings (requires embedded holdings data)"
                         )
     args = parser.parse_args()
     filename_in = args.input_filename
     filename_out = args.output_filename
-    features = [clean_feature(_) for _ in re.split("[,;+]", args.features)]
+    features = [clean_feature(_) for _ in re.split("[,;]", args.features)]
 
     # File handling
     f_in = open(filename_in, "r", encoding="utf-8")
@@ -177,16 +194,34 @@ def main():
 
         # Extract features
         for feature in features:
-            tag_param = re.split("_", feature)
-            tag = tag_param[0]
-            param = tag_param[1] if len(tag_param) > 1 else ""
+            feat_parts = re.split("_", feature)
+            tag_ind = re.split("ind", feat_parts[0])
+            tag = tag_ind[0]
+            ind_filter = tag_ind[1:]
+            param = feat_parts[1] if len(feat_parts) > 1 else ""
             data = []
 
             select_fields = re.findall(get_fields_with_tag_regexp(tag), record)
 
             for field in select_fields:
-                m = re.findall(get_field_contents_regexp(tag, param), field)
-                data.append(" ".join(m))
+                inds = get_indicators(field)
+
+                if args.show_ind:
+                    if len(inds) > 0:
+                        data.append("{" + "".join(inds) + "}")
+
+                ind_check_passed = True
+                
+                if len(ind_filter) > 0:
+                    for ind in ind_filter:
+                        ind_n, ind_val = re.split("=", ind)
+
+                        if inds[int(ind_n)-1] != ind_val:
+                            ind_check_passed = False
+
+                if ind_check_passed:
+                    m = re.findall(get_field_contents_regexp(tag, param), field)
+                    data.append(" ".join(m))
 
             dict_out[feature] = "|".join(data)
 
