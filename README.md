@@ -30,7 +30,7 @@ Optional arguments include:
 The output is a CSV file, which can then serve as input to any data analysis tool.
 
 Example of a command:
-`python3 marcxml_bib_miner.py -i sample.xml output.csv "LDR/6,264ind1= ind2=4,300,338$b,856ind2=1$u"`
+`python3 marcxml_bib_miner.py sample.xml output.csv "LDR/6,264ind1= ind2=4,300,338$b,856ind2=1$u"`
 
 Depending on the terminal, different field-subfield separators should be used such as `_` or `-` (e.g., in PowerShell `$` is reserved for variables and thus won't work).
 
