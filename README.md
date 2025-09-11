@@ -6,7 +6,7 @@
 
 ## Description
 
-This Python script uses regular expressions to extract user-specified data from a MARCXML file in a somewhat efficient manner (faster than with an XML parser like Beautiful Soup).
+This Python script uses regular expressions to extract user-specified data from a MARCXML file in a somewhat efficient manner (faster than the lxml parser).
 The output is a CSV file.
 
 The script addresses the lack of straightforward ways to mine specific MARC data from Alma (library management system by Ex Libris).
@@ -22,8 +22,8 @@ Control numbers (field 001) are extracted by default.
 
 Optional arguments include:
 
-- Splitting the rows by holdings
-- Extracting field indicators (which appear in the output between curly brackets)
+- Splitting the rows by holdings (requires embedded holdings data)
+- Extracting field indicators (which appear in the output between curly brackets, e.g., {10})
 - Counting the number of physical locations (852), electronic locations (856), and/or local extensions ($9 LOCAL) for each record
 
 Example of a command:
